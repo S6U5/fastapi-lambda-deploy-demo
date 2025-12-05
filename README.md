@@ -18,6 +18,7 @@ FastAPIで作成するエンドポイントをAPI Gatewayで呼び出せるよ�
 
 
 ## ToDo
+- [ ] DeployにはGitHub Actionsを使用します
 - [ ] シークレットキー形式ではなくてOICDを用いてでデプロイをおこなう
 - [ ] serverlessを設定する
 - [ ] Hello WorldをJsonで出力
