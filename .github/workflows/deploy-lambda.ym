@@ -1,0 +1,49 @@
+name: Deploy (Serverless Lambda Dev)
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - sls/**
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: yarn --cwd sls install
+
+      - name: Run tests
+        run: yarn --cwd sls test
+        env:
+          TEST_ENV1: ${{ secrets.TEST_ENV1 }}
+          TEST_ENV2: ${{ secrets.TEST_ENV2 }}
+
+      - name: Configure AWS credentials
+        if: ${{ success() }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-1
+          role-to-assume: ${{ secrets.OIDC_ROLE }}
+
+      - name: Deploy with Serverless
+        if: ${{ success() }}
+        uses: serverless/github-action@v3.1
+        with:
+          args: deploy --verbose
+          entrypoint: /bin/sh
+        env:
+          DEPLOY_ENV1: ${{ secrets.DEPLOY_ENV1 }}
+          DEPLOY_ENV2: ${{ secrets.DEPLOY_ENV2 }}
