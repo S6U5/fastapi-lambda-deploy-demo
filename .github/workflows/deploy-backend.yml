@@ -1,8 +1,6 @@
 name: Deploy Lambda to Dev
 
 on:
-  # 手動実行を許可
-  workflow_dispatch:
   
   # main ブランチへの push 時に自動実行
   push:
