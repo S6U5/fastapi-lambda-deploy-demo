@@ -12,6 +12,7 @@ async def index():
 
 @app.get("/greeting")
 async def greeting():
+    print("Hello")
     return {"message":"FastAPIだよ"}
 
 
