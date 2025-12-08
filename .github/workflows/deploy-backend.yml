@@ -1,0 +1,79 @@
+name: Deploy Lambda to Dev
+
+on:
+  # 手動実行を許可
+  workflow_dispatch:
+  
+  # main ブランチへの push 時に自動実行
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-lambda-dev.yml"
+
+# OIDC 用の権限設定（必須）
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. コードをチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. AWS 認証（OIDC）
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GitHubActions-LambdaDeploy
+
+      # 3. Python セットアップ（Python Lambda の場合）
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 4. 依存関係をインストール
+      - name: Install dependencies
+        run: |
+          cd backend
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt -t .
+          fi
+
+      # 5. デプロイパッケージを作成
+      - name: Create deployment package
+        run: |
+          cd backend
+          zip -r ../deployment.zip . -x "*.git*" -x "*__pycache__*" -x "*.pyc"
+
+      # 6. Lambda にデプロイ
+      - name: Deploy to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+            --zip-file fileb://deployment.zip \
+            --region ${{ secrets.AWS_REGION }}
+
+      # 7. デプロイ完了を確認
+      - name: Verify deployment
+        run: |
+          aws lambda wait function-updated \
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+            --region ${{ secrets.AWS_REGION }}
+          
+          echo "✅ Deployment completed successfully!"
+          
+          # バージョン情報を表示
+          aws lambda get-function \
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'Configuration.[FunctionName,LastModified,Version]' \
+            --output table
