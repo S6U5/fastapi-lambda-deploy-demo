@@ -13,7 +13,12 @@ async def index():
 @app.get("/greeting")
 async def greeting():
     print("Hello")
-    return {"message":"FastAPIだよ"}
+    return {"message":"今日の挨拶"}
+
+@app.get("/goodbye")
+async def greeting():
+    print("さようなら")
+    return {"message":"永遠の別れ"}
 
 
 # export port 8080
