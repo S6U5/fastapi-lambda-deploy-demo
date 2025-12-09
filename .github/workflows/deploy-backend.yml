@@ -39,18 +39,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 4. 依存関係をインストール（Lambda用にビルド）
-      - name: Install dependencies
+      # 4. 依存関係をインストール（Docker使用）
+      - name: Install dependencies with Docker
         run: |
           cd backend
           if [ -f requirements.txt ]; then
-            pip install -r requirements.txt \
-              --platform manylinux2014_x86_64 \
-              --target . \
-              --implementation cp \
-              --python-version 3.11 \
-              --only-binary=:all: \
-              --upgrade
+            docker run --rm \
+              -v $(pwd):/var/task \
+              public.ecr.aws/lambda/python:3.11 \
+              pip install -r requirements.txt -t /var/task
           fi
 
       # 5. デプロイパッケージを作成
